@@ -5,11 +5,12 @@ import collections
 from PIL import Image
 
 import configparser
-import tkinter as tk
 
-from ImageShower import ImageShower
+from multiprocessing import Manager
 
-class ImageCopier:
+from ImageShowerProcess import ImageShowerProcess
+
+class ImageReplacer:
 
     def __init__(self, source_dirs, target_dirs):
         self.source_dirs = source_dirs
@@ -18,7 +19,11 @@ class ImageCopier:
         self.source_hashes = None
         self.target_hashes = None
 
-        self.root = tk.Tk()
+        self.manager = Manager()
+        self.images_queue = self.manager.Queue()
+
+        self.image_shower_process = ImageShowerProcess(self.images_queue)
+        self.image_shower_process.start()
 
     def compare_images(self):
 
@@ -34,6 +39,8 @@ class ImageCopier:
                 self.target_hashes = self.hash_dir(target_dir)
 
                 self.compare_hashes()
+
+        self.images_queue.put(None)
 
 
     def hash_dir(self, d):
@@ -57,18 +64,15 @@ class ImageCopier:
             if k in self.target_hashes.keys():
                 print("Found match")
 
-                print(self.source_hashes[k])
+                # print(self.source_hashes[k])
 
-                for v1 in self.source_hashes[k]:
-                    for v2 in self.target_hashes[k]:
-                        self.build_comparison(v1, v2)
+                self.images_queue.put((self.source_hashes[k], self.target_hashes[k]))
 
-    def build_comparison(self, source_file, target_file):
+                # for v1 in self.source_hashes[k]:
+                #     for v2 in self.target_hashes[k]:
+                #         self.build_comparison(v1, v2)
 
-        img_shower = ImageShower(source_file, target_file, master = self.root)
-        img_shower.mainloop()
 
-        raise Exception()
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()
@@ -80,5 +84,5 @@ if __name__ == "__main__":
     s_dirs = [os.path.expanduser(v.strip()) for v in s_dirs.split()]
     t_dirs = [os.path.expanduser(v.strip()) for v in t_dirs.split()]
 
-    ic = ImageCopier(s_dirs, t_dirs)
+    ic = ImageReplacer(s_dirs, t_dirs)
     ic.compare_images()
