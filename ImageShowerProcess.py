@@ -1,5 +1,5 @@
 from multiprocessing import Process
-import tkinter as tk
+
 
 from ImageShower import ImageShower
 
@@ -11,7 +11,7 @@ class ImageShowerProcess(Process):
         super(ImageShowerProcess, self).__init__()
         self.images_queue = images_queue
 
-        self.root = tk.Tk()
+
     #
     # def __del__(self):
     #     print("Shutting down image shower worker...")
@@ -35,13 +35,10 @@ class ImageShowerProcess(Process):
 
                     hash1 = self.get_hash(v1)
                     hash2 = self.get_hash(v2)
+                    if not hash1.hexdigest() == hash2.hexdigest():
 
-                    print(hash1.hexdigest())
-                    print(hash2.hexdigest())
-                    print(hash1.hexdigest() == hash2.hexdigest())
-
-                    #img_shower = ImageShower(v1, v2, master = self.root)
-                    # img_shower.mainloop()
+                        img_shower = ImageShower(v1, v2)
+                        img_shower.mainloop()
 
 
     def get_hash(self, image_file):

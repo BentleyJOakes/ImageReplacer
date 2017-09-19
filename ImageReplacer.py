@@ -8,6 +8,8 @@ import configparser
 
 from multiprocessing import Manager
 
+from progress import ProgressBar
+
 from ImageShowerProcess import ImageShowerProcess
 
 class ImageReplacer:
@@ -25,10 +27,11 @@ class ImageReplacer:
         self.image_shower_process = ImageShowerProcess(self.images_queue)
         self.image_shower_process.start()
 
+        self.image_filetypes = [".jpg", ".jpeg", ".png"]
+
     def compare_images(self):
 
-        print("Compare images...")
-
+        print("Comparing images...")
         print("Source dirs: " + str(self.source_dirs))
         print("Target dirs: " + str(self.target_dirs))
 
@@ -42,36 +45,41 @@ class ImageReplacer:
 
         self.images_queue.put(None)
 
+        self.image_shower_process.join()
+
 
     def hash_dir(self, d):
         hash_dict = collections.defaultdict(list)
 
         print("Hashing directory: " + d)
-        files = sorted(os.listdir(d))
-        for index, f in enumerate(files):
-            i_filename = os.path.join(d, f)
-            i = Image.open(i_filename)
-            h = imagehash.average_hash(i)
-            #print(h)
-            print(index/len(files))
 
-            hash_dict[h].append(i_filename)
+        files = sorted(os.listdir(d))
+
+        pb = ProgressBar(len(files))
+        for index, f in enumerate(files):
+
+            if any([f.lower().endswith(x) for x in self.image_filetypes]):
+                i_filename = os.path.join(d, f)
+                i = Image.open(i_filename)
+                h = imagehash.average_hash(i)
+                #print(h)
+                pb.update_progress(index)
+
+                hash_dict[h].append(i_filename)
 
         return hash_dict
 
     def compare_hashes(self):
-        for k in self.source_hashes.keys():
-            if k in self.target_hashes.keys():
-                print("Found match")
+        hash_diff = 1
 
-                # print(self.source_hashes[k])
+        for s_k in self.source_hashes.keys():
 
-                self.images_queue.put((self.source_hashes[k], self.target_hashes[k]))
+            for t_k in self.target_hashes.keys():
 
-                # for v1 in self.source_hashes[k]:
-                #     for v2 in self.target_hashes[k]:
-                #         self.build_comparison(v1, v2)
+                if s_k - t_k > hash_diff:
+                    continue
 
+                self.images_queue.put((self.source_hashes[s_k], self.target_hashes[t_k]))
 
 
 if __name__ == "__main__":
