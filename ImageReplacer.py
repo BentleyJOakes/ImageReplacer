@@ -5,6 +5,9 @@ import collections
 from PIL import Image
 
 import configparser
+import tkinter as tk
+
+from ImageShower import ImageShower
 
 class ImageCopier:
 
@@ -14,6 +17,8 @@ class ImageCopier:
 
         self.source_hashes = None
         self.target_hashes = None
+
+        self.root = tk.Tk()
 
     def compare_images(self):
 
@@ -43,7 +48,7 @@ class ImageCopier:
             #print(h)
             print(index/len(files))
 
-            hash_dict[h].append(f)
+            hash_dict[h].append(i_filename)
 
         return hash_dict
 
@@ -54,11 +59,16 @@ class ImageCopier:
 
                 print(self.source_hashes[k])
 
-                # for v in self.source_hashes[k]:
-                #     print(v[0])
-                # for v in self.target_hashes[k]:
-                #     print(v[0])
+                for v1 in self.source_hashes[k]:
+                    for v2 in self.target_hashes[k]:
+                        self.build_comparison(v1, v2)
 
+    def build_comparison(self, source_file, target_file):
+
+        img_shower = ImageShower(source_file, target_file, master = self.root)
+        img_shower.mainloop()
+
+        raise Exception()
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()
